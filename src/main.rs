@@ -46,7 +46,6 @@ fn main() {
                         .find(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .unwrap();
 
-                    println!("{}", mine_field.tiles[tile.index].revealed);
                     // We do this here to prevent the player from clicking on a mine
                     // with their first guess.
                     mine_field.tiles[tile.index].revealed = true;

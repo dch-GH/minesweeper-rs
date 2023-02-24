@@ -3,6 +3,8 @@ use ::core::panic;
 use crate::constants::{MAX_FLOOD_TILES, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
+// This really doesn't need to be this big of a struct.
+// Could be shrunken down to an (x,y) and bitflags.
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct MineFieldTile {
     pub(crate) rect: Rectangle,
