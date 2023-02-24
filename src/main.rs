@@ -28,6 +28,7 @@ fn main() {
     println!("Screen width: {} height: {}", width, height);
 
     let mut mine_field = MineField::new(width, height);
+    mine_field.populate_mines();
     let mut game_state = GameState::PreGame;
 
     while !rl.window_should_close() {
@@ -39,47 +40,49 @@ fn main() {
         match game_state {
             GameState::PreGame => {
                 if left_click_released {
-                    match mine_field
-                        .tiles
-                        .iter_mut()
+                    let clone_tiles = mine_field.tiles.clone();
+                    let tile = clone_tiles
+                        .iter()
                         .filter(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .nth(0)
-                    {
-                        Some(tile) => {
-                            // We do this here to prevent the player from clicking on a mine
-                            // with their first guess.
-                            tile.revealed = true;
-                            game_state = GameState::Playing;
-                            mine_field.populate_mines();
-                        }
-                        None => {}
+                        .unwrap();
+
+                    println!("{}", mine_field.tiles[tile.index].revealed);
+                    // We do this here to prevent the player from clicking on a mine
+                    // with their first guess.
+                    mine_field.tiles[tile.index].revealed = true;
+
+                    if tile.has_mine {
+                        mine_field.tiles[tile.index].has_mine = false;
                     }
+
+                    game_state = GameState::Playing;
+                    mine_field.update_neighbors();
+                    mine_field.flood_reveal_from_pos(tile.coords);
                 }
             }
 
             GameState::Playing => {
                 // Dig up a tile.
                 if left_click_released {
-                    match mine_field
-                        .tiles
-                        .iter_mut()
+                    let clone_tiles = mine_field.tiles.clone();
+                    let clicked_tile = clone_tiles
+                        .iter()
                         .filter(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .nth(0)
-                    {
-                        Some(tile) => {
-                            // Don't dig up flagged tiles.
-                            if !tile.revealed && !tile.flagged {
-                                tile.revealed = true;
-                                println!("{}", mine_field.required_num_to_clear);
-                                if tile.has_mine {
-                                    game_state = GameState::GameOver;
-                                }
-                            }
+                        .unwrap();
+
+                    if !clicked_tile.revealed && !clicked_tile.flagged {
+                        mine_field.tiles[clicked_tile.index].revealed = true;
+                        if clicked_tile.has_mine {
+                            game_state = GameState::GameOver;
+                        } else if clicked_tile.mine_neighbor_count <= 0 {
+                            mine_field.flood_reveal_from_pos(clicked_tile.coords);
                         }
-                        None => {}
                     }
                 }
 
+                // Flag a tile.
                 if right_click_released {
                     let tile = mine_field
                         .tiles
@@ -94,11 +97,15 @@ fn main() {
                 }
             }
 
-            GameState::GameOver => {
-                if rl.is_key_released(KeyboardKey::KEY_SPACE) {
-                    game_state = GameState::PreGame;
-                    mine_field = MineField::new(width, height);
-                }
+            GameState::GameOver => {}
+        }
+
+        // Handle retrying.
+        if game_state != GameState::PreGame {
+            if rl.is_key_released(KeyboardKey::KEY_SPACE) {
+                game_state = GameState::PreGame;
+                mine_field = MineField::new(width, height);
+                mine_field.populate_mines();
             }
         }
 
@@ -112,12 +119,12 @@ fn main() {
                 false => tile.color,
             };
 
-            let tile_x = tile.pixel_position.0;
-            let tile_y = tile.pixel_position.1;
+            let tile_x = tile.coords.0;
+            let tile_y = tile.coords.1;
 
             d.draw_rectangle(tile_x, tile_y, TILE_SIZE - 2, TILE_SIZE - 2, tile_color);
 
-            if game_state == GameState::GameOver && tile.has_mine {
+            if (game_state == GameState::GameOver || DEBUG) && tile.has_mine {
                 d.draw_texture(&mine_sprite, tile_x, tile_y, Color::RED);
             }
 
@@ -132,7 +139,7 @@ fn main() {
                     tile_x + TILE_SIZE / 4,
                     tile_y + TILE_SIZE / 4,
                     18,
-                    Color::BLACK,
+                    MineFieldTile::danger_color(tile.mine_neighbor_count),
                 );
             }
         }

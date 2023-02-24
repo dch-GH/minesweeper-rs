@@ -1,16 +1,29 @@
-use crate::constants::TILE_SIZE;
-use raylib::prelude::*;
+use ::core::panic;
+
+use crate::constants::{MAX_FLOOD_TILES, TILE_SIZE};
+use raylib::prelude::{Color, *};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct MineFieldTile {
     pub(crate) rect: Rectangle,
-    pub(crate) pixel_position: (i32, i32),
+    pub(crate) coords: (i32, i32),
     pub(crate) revealed: bool,
     pub(crate) has_mine: bool,
     pub(crate) flagged: bool,
-    pub(crate) mine_neighbor_count: u8,
-    pub(crate) index: i32,
+    pub(crate) mine_neighbor_count: i32,
+    pub(crate) index: usize,
     pub(crate) color: Color,
+}
+
+impl MineFieldTile {
+    pub(crate) fn danger_color(mines: i32) -> Color {
+        match mines {
+            0 => Color::BLUE,
+            1 => Color::BLUE,
+            2 => Color::GREEN,
+            _ => Color::RED,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -57,7 +70,7 @@ impl MineField {
                     width: TILE_SIZE as f32,
                     height: TILE_SIZE as f32,
                 },
-                pixel_position: (x_pos, y_pos),
+                coords: (x_pos, y_pos),
                 revealed: false,
                 has_mine: false,
                 flagged: false,
@@ -82,29 +95,90 @@ impl MineField {
         }
     }
 
+    pub(crate) fn update_neighbors(&mut self) {
+        for mut t in self.tiles.iter_mut() {
+            t.mine_neighbor_count = 0;
+        }
+
+        for (index, tile) in self.tiles.clone().iter().enumerate() {
+            for n in self.get_neighbors(tile.coords.0, tile.coords.1).iter() {
+                match n {
+                    Some(neighbor) => {
+                        if neighbor.has_mine {
+                            self.tiles[index].mine_neighbor_count += 1;
+                        }
+                    }
+                    None => {}
+                }
+            }
+        }
+    }
+
     pub(crate) fn populate_mines(&mut self) {
+        // Plant the mines
         for tile in self.tiles.iter_mut() {
             if tile.revealed {
                 continue;
             }
 
-            tile.has_mine = get_random_value::<i32>(0, 10) == 2;
+            if get_random_value::<i32>(0, 10) == 2 {
+                tile.has_mine = true;
+            } else {
+                self.required_num_to_clear += 1;
+            }
         }
 
-        for (index, tile) in self.tiles.clone().iter().enumerate() {
-            if tile.has_mine {
-                continue;
+        self.update_neighbors();
+    }
+
+    pub(crate) fn flood_reveal_from_pos(&mut self, pos: (i32, i32)) {
+        let mut flood_queue: Vec<MineFieldTile> = Vec::new();
+        let origin_tile = match self.get_tile(pos.0, pos.1) {
+            None => {
+                panic!("Origin tile is None!");
+            }
+            Some(tile) => tile,
+        };
+
+        let mut flood_count: i32 = 0;
+        flood_queue.push(origin_tile);
+        while !flood_queue.is_empty() {
+            let tile = match flood_queue.pop() {
+                None => {
+                    panic!("Couldn't pop from flood queue vector!");
+                }
+                Some(tile) => tile,
+            };
+
+            if flood_count >= MAX_FLOOD_TILES {
+                break;
             }
 
-            let (_, neighbors) = self.get_neighbors(tile.pixel_position.0, tile.pixel_position.1);
+            for neighbor in self
+                .get_neighbors(tile.coords.0, tile.coords.1)
+                .iter()
+                .filter(|x| {
+                    if x.is_none() {
+                        return false;
+                    }
 
-            for n in neighbors {
-                if n.is_some() && n.unwrap().has_mine {
-                    self.tiles[index].mine_neighbor_count += 1;
+                    let n = x.unwrap();
+                    !n.has_mine && n.mine_neighbor_count <= 0 && !n.revealed
+                })
+            {
+                match neighbor {
+                    None => {
+                        panic!("Neighbor was None in flood reveal get_neighbors!");
+                    }
+                    Some(neighbor) => {
+                        self.tiles[neighbor.index].revealed = true;
+                        flood_queue.push(*neighbor);
+                    }
                 }
             }
 
-            self.required_num_to_clear += 1;
+            flood_count += 1;
+            assert!(flood_queue.len() <= 800);
         }
     }
 
@@ -118,18 +192,16 @@ impl MineField {
             return None;
         }
 
-        for tile in self.tiles.iter() {
-            if tile.pixel_position.0 == x && tile.pixel_position.1 == y {
-                return Some(*tile);
-            }
-        }
-
-        return None;
+        let index: usize =
+            (x / TILE_SIZE + (self.size.x as i32 / TILE_SIZE as i32 * y / TILE_SIZE)) as usize;
+        self.tiles
+            .iter()
+            .filter(|x| x.index == index)
+            .nth(0)
+            .copied()
     }
 
-    pub(crate) fn get_neighbors(&self, x: i32, y: i32) -> (i32, Vec<Option<MineFieldTile>>) {
-        // How many neighbors are Some();
-        let mut count_valid_neighbors = 0;
+    pub(crate) fn get_neighbors(&self, x: i32, y: i32) -> Vec<Option<MineFieldTile>> {
         let mut neighbors: Vec<Option<MineFieldTile>> = Vec::new();
 
         // Clockwise order from NW -> W;
@@ -158,12 +230,6 @@ impl MineField {
         // West
         neighbors.push(self.get_tile(x - TILE_SIZE, y));
 
-        for n in neighbors.iter() {
-            if n.is_some() {
-                count_valid_neighbors += 1;
-            }
-        }
-
-        return (count_valid_neighbors, neighbors);
+        return neighbors;
     }
 }
