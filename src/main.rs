@@ -43,8 +43,7 @@ fn main() {
                     let clone_tiles = mine_field.tiles.clone();
                     let tile = clone_tiles
                         .iter()
-                        .filter(|x| x.rect.check_collision_point_rec(mouse_pos))
-                        .nth(0)
+                        .find(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .unwrap();
 
                     println!("{}", mine_field.tiles[tile.index].revealed);
@@ -68,8 +67,7 @@ fn main() {
                     let clone_tiles = mine_field.tiles.clone();
                     let clicked_tile = clone_tiles
                         .iter()
-                        .filter(|x| x.rect.check_collision_point_rec(mouse_pos))
-                        .nth(0)
+                        .find(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .unwrap();
 
                     if !clicked_tile.revealed && !clicked_tile.flagged {
@@ -87,8 +85,7 @@ fn main() {
                     let tile = mine_field
                         .tiles
                         .iter_mut()
-                        .filter(|x| x.rect.check_collision_point_rec(mouse_pos))
-                        .nth(0)
+                        .find(|x| x.rect.check_collision_point_rec(mouse_pos))
                         .unwrap();
 
                     if !tile.revealed {
@@ -101,13 +98,12 @@ fn main() {
         }
 
         // Handle retrying.
-        if game_state != GameState::PreGame {
-            if rl.is_key_released(KeyboardKey::KEY_SPACE) {
-                game_state = GameState::PreGame;
-                mine_field = MineField::new(width, height);
-                mine_field.populate_mines();
-            }
+        if game_state != GameState::PreGame && rl.is_key_released(KeyboardKey::KEY_SPACE) {
+            game_state = GameState::PreGame;
+            mine_field = MineField::new(width, height);
+            mine_field.populate_mines();
         }
+        {}
 
         // Draw
         let mut d = rl.begin_drawing(&thread);

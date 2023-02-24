@@ -28,7 +28,7 @@ impl MineFieldTile {
 
 #[derive(Clone)]
 pub(crate) struct MineField {
-    pub(crate) size: Vector2,
+    pub(crate) size: (i32, i32),
     pub(crate) tiles: Vec<MineFieldTile>,
     pub(crate) required_num_to_clear: i32,
 }
@@ -41,11 +41,10 @@ impl MineField {
         println!("Generating new minefield!");
         println!("Expected num tiles: {}", num_tiles_to_generate);
 
-        let mut tile_index = 0;
         let mut x_index = 0;
         let mut row = 0;
 
-        for _ in 0..num_tiles_to_generate {
+        for tile_index in 0..num_tiles_to_generate {
             let mut x_pos = x_index * TILE_SIZE;
 
             if x_pos >= width {
@@ -75,21 +74,17 @@ impl MineField {
                 has_mine: false,
                 flagged: false,
                 mine_neighbor_count: (0),
-                index: tile_index,
+                index: tile_index as usize,
                 color: tile_color,
             };
 
             field.push(tile);
-            tile_index += 1;
         }
 
         println!("Total tiles generated: {}", field.len());
 
         Self {
-            size: Vector2 {
-                x: width as f32,
-                y: height as f32,
-            },
+            size: (width, height),
             tiles: field,
             required_num_to_clear: 0,
         }
@@ -183,53 +178,27 @@ impl MineField {
     }
 
     pub(crate) fn get_tile(&self, x: i32, y: i32) -> Option<MineFieldTile> {
-        if self.tiles.is_empty()
-            || x > self.size.x as i32
-            || y > self.size.y as i32
-            || x < 0
-            || y < 0
-        {
+        if self.tiles.is_empty() || x > self.size.0 || y > self.size.1 || x < 0 || y < 0 {
             return None;
         }
 
-        let index: usize =
-            (x / TILE_SIZE + (self.size.x as i32 / TILE_SIZE as i32 * y / TILE_SIZE)) as usize;
-        self.tiles
-            .iter()
-            .filter(|x| x.index == index)
-            .nth(0)
-            .copied()
+        let index: usize = (x / TILE_SIZE + (self.size.0 / TILE_SIZE * y / TILE_SIZE)) as usize;
+        self.tiles.iter().find(|x| x.index == index).copied()
     }
 
-    pub(crate) fn get_neighbors(&self, x: i32, y: i32) -> Vec<Option<MineFieldTile>> {
-        let mut neighbors: Vec<Option<MineFieldTile>> = Vec::new();
-
+    pub(crate) fn get_neighbors(&self, x: i32, y: i32) -> [Option<MineFieldTile>; 8] {
         // Clockwise order from NW -> W;
+        let northwest = self.get_tile(x - TILE_SIZE, y + TILE_SIZE);
+        let north = self.get_tile(x, y + TILE_SIZE);
+        let northeast = self.get_tile(x + TILE_SIZE, y + TILE_SIZE);
+        let east = self.get_tile(x + TILE_SIZE, y);
+        let southeast = self.get_tile(x + TILE_SIZE, y - TILE_SIZE);
+        let south = self.get_tile(x, y - TILE_SIZE);
+        let southwest = self.get_tile(x - TILE_SIZE, y - TILE_SIZE);
+        let west = self.get_tile(x - TILE_SIZE, y);
 
-        // Northwest
-        neighbors.push(self.get_tile(x - TILE_SIZE, y + TILE_SIZE));
-
-        // North
-        neighbors.push(self.get_tile(x, y + TILE_SIZE));
-
-        // Northeast
-        neighbors.push(self.get_tile(x + TILE_SIZE, y + TILE_SIZE));
-
-        // East
-        neighbors.push(self.get_tile(x + TILE_SIZE, y));
-
-        // Southeast
-        neighbors.push(self.get_tile(x + TILE_SIZE, y - TILE_SIZE));
-
-        // South
-        neighbors.push(self.get_tile(x, y - TILE_SIZE));
-
-        // Southwest
-        neighbors.push(self.get_tile(x - TILE_SIZE, y - TILE_SIZE));
-
-        // West
-        neighbors.push(self.get_tile(x - TILE_SIZE, y));
-
-        return neighbors;
+        [
+            northwest, north, northeast, east, southeast, south, southwest, west,
+        ]
     }
 }
