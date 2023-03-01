@@ -16,7 +16,7 @@ pub(crate) struct MineFieldTile {
     pub(crate) revealed: bool,
     pub(crate) has_mine: bool,
     pub(crate) flagged: bool,
-    pub(crate) mine_neighbor_count: i32,
+    pub(crate) adjecent_mines: i32,
     pub(crate) index: TileIndex,
     pub(crate) color: Color,
 }
@@ -76,7 +76,7 @@ impl MineField {
                 revealed: false,
                 has_mine: false,
                 flagged: false,
-                mine_neighbor_count: (0),
+                adjecent_mines: (0),
                 index: tile_index as TileIndex,
                 color: Color::from_hex(tile_color).unwrap(),
             };
@@ -95,7 +95,7 @@ impl MineField {
 
     pub(crate) fn update_neighbors(&mut self) {
         for mut t in self.tiles.iter_mut() {
-            t.mine_neighbor_count = 0;
+            t.adjecent_mines = 0;
         }
 
         for (index, tile) in self.tiles.clone().iter().enumerate() {
@@ -103,7 +103,7 @@ impl MineField {
                 match n {
                     Some(neighbor) => {
                         if neighbor.has_mine {
-                            self.tiles[index].mine_neighbor_count += 1;
+                            self.tiles[index].adjecent_mines += 1;
                         }
                     }
                     None => {}
@@ -182,7 +182,7 @@ impl MineField {
                     Some(neighbor) => {
                         self.reveal_tile(neighbor.index);
                         flood_revealed_tiles += 1;
-                        if neighbor.mine_neighbor_count > 0 {
+                        if neighbor.adjecent_mines > 0 {
                             continue;
                         }
                         flood_queue.push(*neighbor);
