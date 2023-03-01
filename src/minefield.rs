@@ -1,6 +1,6 @@
 use ::core::panic;
 
-use crate::{TILE_COLOR_PALETTE, TILE_SIZE};
+use crate::{TILE_COLOR_PALETTE_HEX, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
 pub(crate) const MAX_FLOOD_TILES: i32 = 32;
@@ -61,9 +61,9 @@ impl MineField {
 
             let y_pos = row * TILE_SIZE;
 
-            let max_pallete = TILE_COLOR_PALETTE.len() - 1;
+            let max_pallete = TILE_COLOR_PALETTE_HEX.len() - 1;
             let random_tile_color_index = get_random_value::<i32>(0, max_pallete as i32) as usize;
-            let tile_color = TILE_COLOR_PALETTE[random_tile_color_index];
+            let tile_color = TILE_COLOR_PALETTE_HEX[random_tile_color_index];
 
             let tile: MineFieldTile = MineFieldTile {
                 rect: Rectangle {
@@ -78,7 +78,7 @@ impl MineField {
                 flagged: false,
                 mine_neighbor_count: (0),
                 index: tile_index as TileIndex,
-                color: tile_color,
+                color: Color::from_hex(tile_color).unwrap(),
             };
 
             field.push(tile);

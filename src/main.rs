@@ -5,39 +5,9 @@ use raylib::prelude::*;
 
 pub(crate) const TILE_SIZE: i32 = 32;
 pub(crate) const TILE_SIZE_F: f32 = TILE_SIZE as f32;
-const BACKGROUND_COLOR: Color = Color {
-    r: 0,
-    g: 75,
-    b: 35,
-    a: 255,
-};
+pub(crate) const TILE_COLOR_PALETTE_HEX: [&str; 3] = ["69B578", "D0DB97", "3A7D44"];
 
-pub(crate) const TILE_COLOR_PALETTE: [Color; 4] = [
-    Color {
-        r: 56,
-        g: 176,
-        b: 0,
-        a: 255,
-    },
-    Color {
-        r: 112,
-        g: 224,
-        b: 0,
-        a: 255,
-    },
-    Color {
-        r: 158,
-        g: 250,
-        b: 0,
-        a: 255,
-    },
-    Color {
-        r: 204,
-        g: 255,
-        b: 0,
-        a: 255,
-    },
-];
+const BACKGROUND_COLOR_HEX: &str = "181D27";
 
 #[derive(Debug, PartialEq)]
 enum GameState {
@@ -53,6 +23,8 @@ fn main() {
         .vsync()
         .title("Minesweeper")
         .build();
+
+    let bg_color = Color::from_hex(BACKGROUND_COLOR_HEX).unwrap();
 
     // Load assets
     let flag_sprite = rl.load_texture(&thread, "sprites/flag32x32.png").unwrap();
@@ -148,11 +120,11 @@ fn main() {
         // Draw
         {
             let mut d = rl.begin_drawing(&thread);
-            d.clear_background(BACKGROUND_COLOR);
+            d.clear_background(bg_color);
 
             for tile in mine_field.tiles.iter() {
                 let tile_color = match tile.revealed {
-                    true => BACKGROUND_COLOR,
+                    true => bg_color,
                     false => tile.color,
                 };
 
