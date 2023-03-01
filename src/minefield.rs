@@ -1,7 +1,9 @@
 use ::core::panic;
 
-use crate::constants::{MAX_FLOOD_TILES, TILE_SIZE};
+use crate::TILE_SIZE;
 use raylib::prelude::{Color, *};
+
+pub(crate) const MAX_FLOOD_TILES: i32 = 8;
 
 // This really doesn't need to be this big of a struct.
 // Could be shrunken down to an (x,y) and bitflags.
@@ -17,22 +19,20 @@ pub(crate) struct MineFieldTile {
     pub(crate) color: Color,
 }
 
-impl MineFieldTile {
-    pub(crate) fn danger_color(mines: i32) -> Color {
-        match mines {
-            0 => Color::BLUE,
-            1 => Color::BLUE,
-            2 => Color::GREEN,
-            _ => Color::RED,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub(crate) struct MineField {
     pub(crate) size: (i32, i32),
     pub(crate) tiles: Vec<MineFieldTile>,
     pub(crate) required_num_to_clear: i32,
+}
+
+pub(crate) fn get_danger_color(num_mines: i32) -> Color {
+    match num_mines {
+        0 => Color::BLUE,
+        1 => Color::BLUE,
+        2 => Color::GREEN,
+        _ => Color::RED,
+    }
 }
 
 impl MineField {
@@ -175,7 +175,6 @@ impl MineField {
             }
 
             flood_count += 1;
-            assert!(flood_queue.len() <= 800);
         }
     }
 
