@@ -1,9 +1,9 @@
 use ::core::panic;
 
-use crate::TILE_SIZE;
+use crate::{TILE_COLOR_PALETTE, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
-pub(crate) const MAX_FLOOD_TILES: i32 = 8;
+pub(crate) const MAX_FLOOD_TILES: i32 = 32;
 
 type TileIndex = usize;
 
@@ -61,10 +61,9 @@ impl MineField {
 
             let y_pos = row * TILE_SIZE;
 
-            let ran_r = get_random_value::<i32>(5, 10) as u8;
-            let ran_g = get_random_value::<i32>(180, 255) as u8;
-            let ran_b = get_random_value::<i32>(0, 30) as u8;
-            let tile_color = rcolor(ran_r, ran_g, ran_b, 255);
+            let max_pallete = TILE_COLOR_PALETTE.len() - 1;
+            let random_tile_color_index = get_random_value::<i32>(0, max_pallete as i32) as usize;
+            let tile_color = TILE_COLOR_PALETTE[random_tile_color_index];
 
             let tile: MineFieldTile = MineFieldTile {
                 rect: Rectangle {
@@ -118,7 +117,7 @@ impl MineField {
     pub(crate) fn populate_mines(&mut self) {
         // Plant the mines
         for tile in self.tiles.iter_mut() {
-            // A tile can be revealed here because it
+            // A tile may be revealed here because it
             // may be the PreGame starting tile!
             // No mine on this tile, that would be lame.
             if tile.revealed {
@@ -145,19 +144,20 @@ impl MineField {
             Some(tile) => tile,
         };
 
-        let mut flood_count: i32 = 0;
+        let mut flood_revealed_tiles: i32 = 0;
         flood_queue.push(origin_tile);
-        while !flood_queue.is_empty() {
+
+        'flood: loop {
+            if flood_queue.is_empty() {
+                break 'flood;
+            }
+
             let tile = match flood_queue.pop() {
                 None => {
-                    panic!("Couldn't pop from flood queue vector!");
+                    panic!("Couldn't pop from flood queue!");
                 }
                 Some(tile) => tile,
             };
-
-            if flood_count >= MAX_FLOOD_TILES {
-                break;
-            }
 
             for neighbor in self
                 .get_neighbors(tile.coords.0, tile.coords.1)
@@ -168,21 +168,27 @@ impl MineField {
                     }
 
                     let n = x.unwrap();
-                    !n.has_mine && n.mine_neighbor_count <= 0 && !n.revealed
+                    !n.has_mine && !n.revealed
                 })
             {
+                if flood_revealed_tiles >= MAX_FLOOD_TILES {
+                    break 'flood;
+                }
+
                 match neighbor {
                     None => {
                         panic!("Neighbor was None in flood reveal get_neighbors!");
                     }
                     Some(neighbor) => {
                         self.reveal_tile(neighbor.index);
+                        flood_revealed_tiles += 1;
+                        if neighbor.mine_neighbor_count > 0 {
+                            continue;
+                        }
                         flood_queue.push(*neighbor);
                     }
                 }
             }
-
-            flood_count += 1;
         }
     }
 

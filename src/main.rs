@@ -5,7 +5,39 @@ use raylib::prelude::*;
 
 pub(crate) const TILE_SIZE: i32 = 32;
 pub(crate) const TILE_SIZE_F: f32 = TILE_SIZE as f32;
-pub(crate) const BACKGROUND_COLOR: Color = Color::DARKGREEN;
+const BACKGROUND_COLOR: Color = Color {
+    r: 0,
+    g: 75,
+    b: 35,
+    a: 255,
+};
+
+pub(crate) const TILE_COLOR_PALETTE: [Color; 4] = [
+    Color {
+        r: 56,
+        g: 176,
+        b: 0,
+        a: 255,
+    },
+    Color {
+        r: 112,
+        g: 224,
+        b: 0,
+        a: 255,
+    },
+    Color {
+        r: 158,
+        g: 250,
+        b: 0,
+        a: 255,
+    },
+    Color {
+        r: 204,
+        g: 255,
+        b: 0,
+        a: 255,
+    },
+];
 
 #[derive(Debug, PartialEq)]
 enum GameState {
@@ -24,8 +56,9 @@ fn main() {
 
     // Load assets
     let flag_sprite = rl.load_texture(&thread, "sprites/flag32x32.png").unwrap();
-    let font_regular = rl.load_font(&thread, "fonts/OpenSans-Regular.ttf").unwrap();
     let font_bold = rl.load_font(&thread, "fonts/OpenSans-Bold.ttf").unwrap();
+    let win = rl.load_texture(&thread, "sprites/win.png").unwrap();
+    let lose = rl.load_texture(&thread, "sprites/lose.png").unwrap();
 
     let width = rl.get_screen_width();
     let height = rl.get_screen_height();
@@ -40,6 +73,8 @@ fn main() {
             let mouse_pos = rl.get_mouse_position();
             let left_click_released = rl.is_mouse_button_released(MouseButton::MOUSE_LEFT_BUTTON);
             let right_click_released = rl.is_mouse_button_released(MouseButton::MOUSE_RIGHT_BUTTON);
+            let paint_left_click = rl.is_mouse_button_down(MouseButton::MOUSE_LEFT_BUTTON)
+                && rl.is_key_down(KeyboardKey::KEY_LEFT_SHIFT);
 
             match game_state {
                 GameState::PreGame => {
@@ -64,7 +99,7 @@ fn main() {
 
                 GameState::Playing => {
                     // Dig up a tile.
-                    if left_click_released {
+                    if left_click_released || paint_left_click {
                         let clone_tiles = mine_field.tiles.clone();
                         if let Some(clicked_tile) = clone_tiles
                             .iter()
@@ -136,27 +171,15 @@ fn main() {
                     tile_color,
                 );
 
-                // if game_state == GameState::GameOver && tile.has_mine {
-                //     d.draw_circle_gradient(
-                //         tile_x + TILE_SIZE / 2,
-                //         tile_y + TILE_SIZE / 2,
-                //         8.0,
-                //         Color::RED,
-                //         Color::DARKPURPLE,
-                //     );
-                // }
-
-                //temporary
-                if tile.has_mine {
+                if game_state == GameState::GameOver && tile.has_mine {
                     d.draw_circle_gradient(
                         tile_x + TILE_SIZE / 2,
                         tile_y + TILE_SIZE / 2,
                         8.0,
                         Color::RED,
-                        Color::DARKPURPLE,
+                        Color::BLACK,
                     );
                 }
-                //
 
                 if tile.flagged {
                     d.draw_texture(&flag_sprite, tile_x, tile_y, Color::BLUE);
@@ -165,7 +188,7 @@ fn main() {
                 if !tile.has_mine && tile.revealed && tile.mine_neighbor_count > 0 {
                     // Draw number of neighbor tiles which have a mine.
                     d.draw_text_ex(
-                        &font_regular,
+                        &font_bold,
                         &format!("{}", tile.mine_neighbor_count),
                         Vector2 {
                             x: tile_x as f32 + TILE_SIZE_F / 4.0,
@@ -182,30 +205,10 @@ fn main() {
                 GameState::PreGame => {}
                 GameState::Playing => {}
                 GameState::GameOver => {
-                    d.draw_text_ex(
-                        &font_bold,
-                        "Game Over!\nPress space to restart.",
-                        Vector2 {
-                            x: width as f32 / 4.0,
-                            y: height as f32 / 4.0,
-                        },
-                        34.0,
-                        1.0,
-                        Color::WHITE,
-                    );
+                    d.draw_texture(&lose, 0, 0, Color::WHITE);
                 }
                 GameState::Victory => {
-                    d.draw_text_ex(
-                        &font_bold,
-                        "YOU WIN! :)",
-                        Vector2 {
-                            x: width as f32 / 4.0,
-                            y: height as f32 / 4.0,
-                        },
-                        34.0,
-                        1.0,
-                        Color::WHITE,
-                    );
+                    d.draw_texture(&win, 0, 0, Color::WHITE);
                 }
             }
         }
