@@ -5,6 +5,8 @@ use raylib::prelude::{Color, *};
 
 pub(crate) const MAX_FLOOD_TILES: i32 = 8;
 
+type TileIndex = usize;
+
 // This really doesn't need to be this big of a struct.
 // Could be shrunken down to an (x,y) and bitflags.
 #[derive(Debug, Copy, Clone)]
@@ -15,7 +17,7 @@ pub(crate) struct MineFieldTile {
     pub(crate) has_mine: bool,
     pub(crate) flagged: bool,
     pub(crate) mine_neighbor_count: i32,
-    pub(crate) index: usize,
+    pub(crate) index: TileIndex,
     pub(crate) color: Color,
 }
 
@@ -23,7 +25,7 @@ pub(crate) struct MineFieldTile {
 pub(crate) struct MineField {
     pub(crate) size: (i32, i32),
     pub(crate) tiles: Vec<MineFieldTile>,
-    pub(crate) required_num_to_clear: i32,
+    pub(crate) required_num_to_clear: usize,
 }
 
 pub(crate) fn get_danger_color(num_mines: i32) -> Color {
@@ -76,7 +78,7 @@ impl MineField {
                 has_mine: false,
                 flagged: false,
                 mine_neighbor_count: (0),
-                index: tile_index as usize,
+                index: tile_index as TileIndex,
                 color: tile_color,
             };
 
@@ -111,9 +113,14 @@ impl MineField {
         }
     }
 
+    /// Set up the minefield, populate mines.
+    /// This will also calculate the score the player needs to achieve to win.
     pub(crate) fn populate_mines(&mut self) {
         // Plant the mines
         for tile in self.tiles.iter_mut() {
+            // A tile can be revealed here because it
+            // may be the PreGame starting tile!
+            // No mine on this tile, that would be lame.
             if tile.revealed {
                 continue;
             }
@@ -125,6 +132,7 @@ impl MineField {
             }
         }
 
+        println!("Player must clear {} tiles.", self.required_num_to_clear);
         self.update_neighbors();
     }
 
@@ -168,7 +176,7 @@ impl MineField {
                         panic!("Neighbor was None in flood reveal get_neighbors!");
                     }
                     Some(neighbor) => {
-                        self.tiles[neighbor.index].revealed = true;
+                        self.reveal_tile(neighbor.index);
                         flood_queue.push(*neighbor);
                     }
                 }
@@ -183,8 +191,21 @@ impl MineField {
             return None;
         }
 
-        let index: usize = (x / TILE_SIZE + (self.size.0 / TILE_SIZE * y / TILE_SIZE)) as usize;
-        self.tiles.iter().find(|x| x.index == index).copied()
+        self.tiles
+            .iter()
+            .find(|tile| tile.coords == (x, y))
+            .copied()
+    }
+
+    pub(crate) fn reveal_tile(&mut self, index: TileIndex) {
+        if index >= self.tiles.len() {
+            return;
+        }
+
+        self.tiles[index].revealed = true;
+        if self.required_num_to_clear > 0 {
+            self.required_num_to_clear -= 1;
+        }
     }
 
     pub(crate) fn get_neighbors(&self, x: i32, y: i32) -> [Option<MineFieldTile>; 8] {
