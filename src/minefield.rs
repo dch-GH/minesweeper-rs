@@ -3,7 +3,7 @@ use ::core::panic;
 use crate::{TILE_COLOR_PALETTE_HEX, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
-pub(crate) const MAX_FLOOD_TILES: i32 = 32;
+const MAX_FLOOD_TILES: i32 = 32;
 
 type TileIndex = usize;
 
