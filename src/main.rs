@@ -29,8 +29,6 @@ fn main() {
     // Load assets
     let flag_sprite = rl.load_texture(&thread, "sprites/flag32x32.png").unwrap();
     let font_bold = rl.load_font(&thread, "fonts/OpenSans-Bold.ttf").unwrap();
-    let win = rl.load_texture(&thread, "sprites/win.png").unwrap();
-    let lose = rl.load_texture(&thread, "sprites/lose.png").unwrap();
 
     let width = rl.get_screen_width();
     let height = rl.get_screen_height();
@@ -144,12 +142,11 @@ fn main() {
                 );
 
                 if game_state == GameState::GameOver && tile.has_mine {
-                    d.draw_circle_gradient(
-                        tile_x + TILE_SIZE / 2,
-                        tile_y + TILE_SIZE / 2,
-                        8.0,
+                    d.draw_circle(
+                        tile_x + TILE_SIZE / 2 - 1,
+                        tile_y + TILE_SIZE / 2 - 1,
+                        9.0,
                         Color::RED,
-                        Color::BLACK,
                     );
                 }
 
@@ -177,10 +174,41 @@ fn main() {
                 GameState::PreGame => {}
                 GameState::Playing => {}
                 GameState::GameOver => {
-                    d.draw_texture(&lose, 0, 0, Color::WHITE);
+                    d.draw_text_ex(
+                        &font_bold,
+                        "Game Over. Press SPACE to try again.",
+                        Vector2 { x: 0.1, y: 0.2 },
+                        24.0,
+                        1.0,
+                        Color::BLACK,
+                    );
+                    d.draw_text_ex(
+                        &font_bold,
+                        "Game Over. Press SPACE to try again.",
+                        Vector2 { x: 1.0, y: 1.0 },
+                        24.0,
+                        1.0,
+                        Color::WHITE,
+                    );
                 }
                 GameState::Victory => {
-                    d.draw_texture(&win, 0, 0, Color::WHITE);
+                    d.draw_text_ex(
+                        &font_bold,
+                        "You Win! Press SPACE to play again.",
+                        Vector2 { x: 0.1, y: 0.2 },
+                        24.0,
+                        1.0,
+                        Color::BLACK,
+                    );
+
+                    d.draw_text_ex(
+                        &font_bold,
+                        "You Win! Press SPACE to play again.",
+                        Vector2 { x: 1.0, y: 1.0 },
+                        24.0,
+                        1.0,
+                        Color::WHITE,
+                    );
                 }
             }
         }
