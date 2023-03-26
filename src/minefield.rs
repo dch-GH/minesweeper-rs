@@ -4,7 +4,7 @@ use crate::{TILE_COLOR_PALETTE_HEX, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
 const MAX_FLOOD_TILES: i32 = 100;
-const MINE_CHANCE: i32 = 6;
+const MINE_CHANCE: i32 = 5;
 
 type TileIndex = usize;
 
