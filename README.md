@@ -1,6 +1,6 @@
 # minesweeper-rs
 Simple Minesweeper clone written in Rust using [raylib-rs](https://github.com/deltaphc/raylib-rs).
 
-![image](https://user-images.githubusercontent.com/66768086/222264338-78217fd8-a448-4949-9e5c-c120b4bf6d9e.png)
-![image](https://user-images.githubusercontent.com/66768086/222264391-ebb7b8e7-a9a9-4521-9c67-8b024a1b9957.png)
-![image](https://user-images.githubusercontent.com/66768086/222264416-222d2c19-e063-432b-a81f-fe819591289d.png)
+![image](https://user-images.githubusercontent.com/66768086/227754161-62bfd624-f18f-47d7-8a5c-3d03b4832013.png)
+![image](https://user-images.githubusercontent.com/66768086/227754176-96a01863-cdc8-4e7a-9f2d-0f70feee1dc7.png)
+![image](https://user-images.githubusercontent.com/66768086/227754181-cb759080-df4b-4149-8068-d54c65d38bb2.png)
