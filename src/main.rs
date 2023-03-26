@@ -79,7 +79,7 @@ fn main() {
                                 mine_field.reveal_tile(clicked_tile.index);
                                 if clicked_tile.has_mine {
                                     game_state = GameState::GameOver;
-                                } else if clicked_tile.adjecent_mines <= 0 {
+                                } else if clicked_tile.adjacent_mines <= 0 {
                                     mine_field.flood_reveal_from_pos(clicked_tile.coords);
                                 }
                             }
@@ -154,18 +154,18 @@ fn main() {
                     d.draw_texture(&flag_sprite, tile_x, tile_y, Color::BLUE);
                 }
 
-                if !tile.has_mine && tile.revealed && tile.adjecent_mines > 0 {
+                if !tile.has_mine && tile.revealed && tile.adjacent_mines > 0 {
                     // Draw number of neighbor tiles which have a mine.
                     d.draw_text_ex(
                         &font_bold,
-                        &format!("{}", tile.adjecent_mines),
+                        &format!("{}", tile.adjacent_mines),
                         Vector2 {
                             x: tile_x as f32 + TILE_SIZE_F / 4.0,
                             y: tile_y as f32 + TILE_SIZE_F / 4.0,
                         },
                         24.0,
                         1.0,
-                        get_danger_color(tile.adjecent_mines),
+                        get_danger_color(tile.adjacent_mines),
                     );
                 }
             }

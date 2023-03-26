@@ -3,7 +3,8 @@ use ::core::panic;
 use crate::{TILE_COLOR_PALETTE_HEX, TILE_SIZE};
 use raylib::prelude::{Color, *};
 
-const MAX_FLOOD_TILES: i32 = 32;
+const MAX_FLOOD_TILES: i32 = 100;
+const MINE_CHANCE: i32 = 6;
 
 type TileIndex = usize;
 
@@ -16,7 +17,7 @@ pub(crate) struct MineFieldTile {
     pub(crate) revealed: bool,
     pub(crate) has_mine: bool,
     pub(crate) flagged: bool,
-    pub(crate) adjecent_mines: i32,
+    pub(crate) adjacent_mines: i32,
     pub(crate) index: TileIndex,
     pub(crate) color: Color,
 }
@@ -24,6 +25,7 @@ pub(crate) struct MineFieldTile {
 #[derive(Clone)]
 pub(crate) struct MineField {
     pub(crate) size: (i32, i32),
+    // TODO: This doesn't need to be a Vec at all. [x,y] instead.
     pub(crate) tiles: Vec<MineFieldTile>,
     pub(crate) required_num_to_clear: usize,
 }
@@ -51,7 +53,7 @@ impl MineField {
         for tile_index in 0..num_tiles_to_generate {
             let mut x_pos = x_index * TILE_SIZE;
 
-            if x_pos >= width {
+            if x_pos + TILE_SIZE > width {
                 x_index = 0;
                 x_pos = 0;
                 row += 1;
@@ -76,7 +78,7 @@ impl MineField {
                 revealed: false,
                 has_mine: false,
                 flagged: false,
-                adjecent_mines: (0),
+                adjacent_mines: (0),
                 index: tile_index as TileIndex,
                 color: Color::from_hex(tile_color).unwrap(),
             };
@@ -95,7 +97,7 @@ impl MineField {
 
     pub(crate) fn update_neighbors(&mut self) {
         for mut t in self.tiles.iter_mut() {
-            t.adjecent_mines = 0;
+            t.adjacent_mines = 0;
         }
 
         for (index, tile) in self.tiles.clone().iter().enumerate() {
@@ -103,7 +105,7 @@ impl MineField {
                 match n {
                     Some(neighbor) => {
                         if neighbor.has_mine {
-                            self.tiles[index].adjecent_mines += 1;
+                            self.tiles[index].adjacent_mines += 1;
                         }
                     }
                     None => {}
@@ -124,7 +126,7 @@ impl MineField {
                 continue;
             }
 
-            if get_random_value::<i32>(0, 10) == 2 {
+            if get_random_value::<i32>(0, MINE_CHANCE) == 1 {
                 tile.has_mine = true;
             } else {
                 self.required_num_to_clear += 1;
@@ -182,7 +184,7 @@ impl MineField {
                     Some(neighbor) => {
                         self.reveal_tile(neighbor.index);
                         flood_revealed_tiles += 1;
-                        if neighbor.adjecent_mines > 0 {
+                        if neighbor.adjacent_mines > 0 {
                             continue;
                         }
                         flood_queue.push(*neighbor);
